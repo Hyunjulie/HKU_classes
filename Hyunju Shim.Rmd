@@ -1,0 +1,137 @@
+---
+title: 'STAT3622 Homework 1: Lending Club'
+linestretch: 1.5
+author: "Hyunju Shim 3035345693"
+output:
+  html_document: default
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(message=FALSE, warning=FALSE)
+```
+
+\begin{center}
+{\sf Name: Hyunju Shim \\
+University No.: 3035345693 }
+\end{center}
+
+**Load data.**
+```{r}
+library(ggplot2)
+library(dplyr)
+library(ggthemes)
+library(reshape2)
+#setwd("E:/HKU data/Courses@HKU/Stat3622/Assignment")
+accept <- read.csv("LC_Accept.csv",header=TRUE,stringsAsFactors=FALSE)
+decline <- read.csv("./LC_Decline.csv",header=TRUE,stringsAsFactors=FALSE)
+```
+
+**Change wrong values (e.g. 201600 -> 201512)**
+```{r}
+accept[accept=="201600"]<-"201512"
+accept[accept=="201700"]<-"201612"
+decline[decline=="201600"]<-"201512"
+decline[decline=="201700"]<-"201612"
+```
+
+
+**Solution to Step 1.** 1. (20%) Plot the acceptance rates of loan applications over the months. (Hint: rate = accept/(accept + decline).) Interpret the resulting chart.
+decline. Interpret the resulting chart.
+
+Codes:
+```{r}
+accept_num = accept %>% count(Date)
+decline_num = decline %>% count(Date)
+
+temp <- merge(accept_num, decline_num, by ='Date')
+temp$sum <- temp$n.x + temp$n.y
+temp$rate <- temp$n.x / temp$sum
+temp2 <- subset(temp, select = -c(n.y, n.x, sum))
+
+#change date to 2017-08-01format
+tempdate <- paste(temp2$Date, "01", sep="")
+temp2$NewDate <- tempdate
+temp2 <- transform(temp2, NewDate = as.Date(as.character(NewDate), "%Y%m%d"))
+temp2 <- subset(temp2, select = -Date)
+temp2 <- temp2[c(2,1)]
+
+temp2 %>% ggplot(aes(x=NewDate, y=rate)) + geom_line(size=0.9, color="black") + geom_point(size=2, color="black") + theme_stata() + labs(title="Acceptance Rate of Loan Applications over Months", x= "Date", y = "Rate")
+```
+
+Interpretation: As an overview, acceptance rate of loan applications was extremely low from the end of 2016 throughout 2017. In the start of 2015, there was a dramatic increase of acceptance rate from under 20% to almost 80% in just a few months. Just by looking at this plot of 'rates', we are not able to distinguish whether this sudden increase was attributed by decrease/increase of application 'numbers'. The dramatic change may be because people who were more 'eligible' for loaning money applied. However, it may also be due to the economy getting better.
+Similarly, the reason for dramatic drop of acceptance rate from the end of 2016 throughout 2017 cannot be distinguished without the actual number of applications. However, we are able to see that 2017 was a difficult year to loan money. During 2017, the American central bank raised its interest rates and US house prices were at record highs. Banks tightened their lending criteria and adjustable rate mortgages were less common in that period. Low acceptance rates would have reflected this fact. Interestingly, acceptance rates soared up with the start of 2018. It would be meaningful to investigate what caused the sudden increase. 
+
+
+**Solution to Step 2.** 2. (20%) Draw a side-by-side barchart of loan purposes grouped by the status of accept and decline. Interpret the resulting chart.
+```{r}
+a <- subset(accept, select="Purpose")
+b <- subset(decline, select="Purpose")
+a_ = a %>% count(Purpose)
+b_ = b%>% count(Purpose)
+purpose <- merge(a_, b_, by ='Purpose')
+#Rename
+names(purpose)[2] <-"Accept"
+names(purpose)[3] <-"Decline"
+df <- melt(purpose, id=c("Purpose"))
+#  SIDE BY SIDE
+ggplot(data=df, aes(x=Purpose, y=value, fill=variable)) + 
+  stat_summary(fun.y=mean, geom="bar",position=position_dodge(1)) +
+  xlab("Purposes")+ ylab("Count") +   scale_fill_discrete(name="Status") + labs(title="Loan Purposes by Accept and Decline")
+```
+
+Interpretation: By this plot, we are able to see that great proportion of borrowers in Lending Club are using the service for debt consolidation. Other purposes such as Housing, Other, and Purchase had relatively low acceptance rate. In Credit Card and Debt Consolidation, one out of three or four borrowers were accepted. In order to take a closer look at the reasons for difference in acceptance rate by loan purposes, we need to know what kind of criterions are used to evaluate the borrowers. It is possible that the Lending Club puts priority on loans that are needed immediately. If that is the case, we are able to explain why acceptance of purchase purpose was low. 
+Moreover, we need to know how much the amount of requested money affects acceptance rate. If it is harder to be accepted if the amount requested is higher, we can explain why House purpose has low acceptance rate. Borrowers for Housing purposes are more likely to request for more money as housing is relatively expensive. 
+
+
+**Solution to Step 3.** 3. (60%) Use R:ggplot2 package to visualize the distributional difference for each continuous attribute between accept and reject. Perform suitable data processing whenever necessary.
+a) Attribute Amount_Requested 
+```{r}
+df <- subset(accept, select = -c(Date, State, Purpose))
+df2 <- subset(decline, select = -c(Date, State, Purpose))
+#change dataframe 
+df$Status <- "Accept"
+df2$Status <- "Decline"
+temp <- rbind(df, df2)
+a <- ggplot(temp, aes(x = Amount_Requested))
+a + geom_density(aes(fill = Status), alpha = 0.4)+scale_color_manual(values = c("#0073C2FF", "#FC4E07"))+   scale_fill_manual(values = c("#0073C2FF", "#FC4E07")) + xlim(0, 50000) + labs(title="Distributional Difference for Amount Requested", x= "Amount Requested (in USD)", y = "Density")
+```
+
+Interpretation: Accept and Decline plots have an interesting trend in their distribution. Both plots have peaks wherever the x-axis (Amount Requested) is divisible by 5000. To put it simply, this shows that people are more likely to request for cleaner and rounded numbers (i.e. 5000, 10000, 15000, 20000, 25000 USD etc.). 
+The plot focuses on depicting the distributional difference for amount requested, and thus we are not able to see the exact numbers of applications. According to the distribution, most of the applications were concentrated below 25000. This is because both accept and decline plots are right-skewed. Accepted application rates evidently decreased as the requested amount increased, and consequently decline rates increased from 30000 USD to 50000 USD. By interpreting the plots, we know that less people applied to higher amounts of money, and it is harder to be accepted when requesting greater amount of money. 
+
+
+b) Attribute Risk_Score
+```{r}
+mean1 = mean(df$Risk_Score)
+mean2 = mean(df2$Risk_Score)
+b <- ggplot(temp, aes(x=Risk_Score))
+b + geom_density(aes(fill = Status), alpha=0.4)+ scale_color_manual(values = c("#0073C2FF", "#FC4E07"))+scale_fill_manual(values = c("#0073C2FF", "#FC4E07")) + labs(title="Distributional Difference for Risk Score", x= "Risk Score", y = "Density")+ geom_vline(xintercept = mean1, colour="#0073C2FF", linetype = "longdash")+ geom_vline(xintercept = mean2, colour="#FC4E07", linetype = "longdash")
+
+```
+
+Interpretation: Risk score for accepted applicants showed evident threshold for getting accepted. For declined applications, the distribution was relatively evenly distributed around the mean of 630 with positively skewed trend. However, almost all of the accepted applications had a risk score of over 650. This can be interpreted as a kind of a threshold for getting accepted. We are able to see that the Lending Club considers Risk Score as one of the most important criteria for evaluating their applications. However, we cannot say that one will get accepted if one has a relatively high risk-score (e.g. over 680) because a considerable proportion of people with high risk scores were also declined. We can say that it is unlikely one will be accepted if one has risk score under about 650. 
+
+c) Attribute Debt_Income_Ratio
+```{r}
+ab <- ggplot(temp, aes(x = Debt_Income_Ratio))
+ab + xlim(0,1) + geom_density(aes(fill = Status), alpha = 0.4)+scale_color_manual(values = c("#0073C2FF", "#FC4E07"))+scale_fill_manual(values = c("#0073C2FF", "#FC4E07")) + labs(title="Distributional Difference for Debt Income Ratio", x= "Debt Income Ratio", y = "Density")+ xlim(0, 1.10)
+
+```
+
+Interpretation: Distribution for debt income ratio for accepted applications was relatively normal distributed. It is logically understandable that Lending Club will lend money to people who have smaller debt-income ratio as they will have higher possibility of paying back. We are able to see that most of the applicants had debt-income ratio of under 0.375. 
+On the other hand, distribution for declined applications has a high variance. It is worthy to note that great proportion of declined applicants have a relatively low debt-income ratio of under 0.3. For these individuals, other factors would have affected their status. However, for declined applications with relatively high debt-income ratio, it is highly likely that this factor has affected status. 
+
+
+d) Attribute Employment_Length
+```{r}
+mean3 = mean(df$Employment_Length)
+mean4 = mean(df2$Employment_Length)
+bb <- ggplot(temp, aes(x=Employment_Length)) 
+bb + xlim(-1,11) + geom_density(aes(fill=Status),alpha = 0.8) +scale_color_manual(values =c("#0073C2FF","#FC4E07"))+scale_fill_manual(values = c("#0073C2FF", "#FC4E07")) + labs(title="Distributional Difference for Employment Length", x= "Employment Length in years", y = "Density") +  geom_vline(xintercept = mean3, colour="#0073C2FF", linetype = "dashed")+ geom_vline(xintercept = mean4, colour="#FC4E07", linetype = "dashed")+ xlim(0, 12)
+
+```
+
+Interpretation: Distribution difference for employment length showed stark difference. Most of the declined applicants had an employment length of under 1 year. Contrastingly, employment length of accepted applicants was spread with many applicants working over 9 years. The fact that people were working for years indicate several things. It could indicate their jobs are stable, causing them to have higher risk scores. As they have stable income, it is less likely that they requested for large amount of money as they can expect their income. 
+On the other hand, mean employment length of declined applications were under 1 year. People who were not working for a long time have less possibility of getting accepted. 
+
