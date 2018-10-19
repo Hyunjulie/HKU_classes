@@ -1,7 +1,7 @@
 ---
 title: 'STAT3622 Homework 1: Lending Club'
 linestretch: 1.5
-author: "Hyunju Shim 3035345693"
+author: "Hyunju"
 output:
   html_document: default
 fontsize: 12pt
@@ -12,8 +12,8 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE)
 ```
 
 \begin{center}
-{\sf Name: Hyunju Shim \\
-University No.: 3035345693 }
+{\sf Name: Hyunju  \\
+University No.:  }
 \end{center}
 
 **Load data.**
