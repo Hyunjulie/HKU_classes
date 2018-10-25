@@ -1,0 +1,326 @@
+---
+title: 'Project: Electronic car charger sale analysis'
+author: "Hyunju Shim, 3035345693"
+date: "10/21/2018"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(ggthemes)
+library(reshape2)
+library(GGally) 
+setwd("/Users/Hyunjulie")
+data<- read.csv('modified.csv')
+data <- subset(data, select = -c(X...Site))
+```
+# 1. Introduction
+
+This project will aim to carry out an analysis of Electronic Car Charger Sales. A brief introduction of the customer is as follows: 
+
+  ???	Customer: Electronic Car Charger company in Guangzhou
+  ???	Data: Daily Electricity consumption at each station (26 columns & 61 rows) 
+  ???	* Question * : Which Covariates (features, factors) contribute to the increase/decrease of the electricity sale? 
+  
+  ???	* Our Objective of Analysis* : Guide to pick up locations for new chargers 
+
+
+The question and objective of the project is vague. It is important to objectively idenfity and illustrate the question again in statistical language. When stating it as a statistical question, the question becomes: 
+  -	How does each covariate affect the outcome? 
+  -	Are they significantly different from 0 in 0.05 significance level?
+  -	Is it necessary to include certain covariates to improve the model fitting? 
+
+Throughout the analysis, we will be using ANOVA (analysis of variance). ANOVA is a statistical method in which the variation in a set of observations is divided into distinct components. It enables us to idenfity whether a feature significantly affects the target.
+
+
+## 1.1 Analysis of Target Variable 
+
+Before starting our the analysis of features and variables, it is important to know how our target variable (Sale of Electricity) is distributed. General overview of 'Sale Distribution' will help us to investigate deeper. 
+
+
+```{r}
+p1 <- data %>%
+  ggplot(aes(sale)) +
+  geom_histogram(bins = 18, fill = "blue") +
+  labs(x = "Sales", y ="Number of Observations") +
+  ggtitle("Distribution of Electric Sales: Target Variable") + 
+  geom_vline(xintercept = mean(data$sale), lty=2)
+p1
+```
+* Note that the dotted line is the mean of Sales.
+
+From the Distribution we find:
+A. The target distribution is right skewed.
+B. There are notable high-count peaks at several specific price values. 
+
+-> There are some sites that excel prominently relative to other places. We may need to look for reasons on those outliers. 
+
+2. Correlation Map 
+```{r}
+data[seq(0,23)] %>% ggcorr(method = c("pairwise","spearman"), label = FALSE, angle = -0, hjust = 0.2) + coord_flip() + ggtitle("Correlation Map Between Variables") 
+```
+
+We now explore correlation with each variable 
+
+
+* Constructing F-Test for each probable variable 
+Null Hypothesis: The feature does not affect the sale of electricity 
+Alternative Hypothesis: Feature affects the sale of electricity 
+-	Reject at 0.05 level: if p < 0.05 we should reject the null hypothesis 
+
+For each of 11 variables, we will be 
+1) Plotting a simple scatterplot with its corresponding regression line 
+2) Constructing ANOVA table and its summary 
+3) State whether the feature is significant on 0.05 level 
+
+Variables: Residential zone, convenience stores, parking lots, business buildings, hospital, restroom, shopping mall, Demand, number of competitors' charger, competitor's price, price
+
+
+## 1. Residential Zone 
+```{r}
+ggplot(data, aes(x=data$residential.zone, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Residential Zones") + ylab("Electricity Sales") + xlab("Number of Residential Zones within 5km")
+```
+
+```{r}
+results = lm(sale ~ residential.zone, data=data)
+summary(results)
+#anova(results)
+```
+
+F-statistic for residential zone is 0.113 on 1 and 59 degrees of freedom. P-Value is 0.738, and thus we do not reject the null hypothesis. The feature Residential zone statistically does not affect sales. 
+
+## 2. Number of Convenience Stores
+```{r}
+ggplot(data, aes(x=data$convinence.stores, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Convenience Stores") + ylab("Electricity Sales") + xlab("Number of Convenience within 5km")
+```
+
+```{r}
+results = lm(sale ~ convinence.stores, data=data)
+anova(results)
+```
+P-Value is 0.7019, and thus we do not reject the null hypothesis. 
+The feature Convenience Store statistically does not affect sales. 
+
+## 3. Number of Parking Lots
+```{r}
+ggplot(data, aes(x=data$parking.lots, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Parking Lots") + ylab("Electricity Sales") + xlab("Number of Parking Lots within 5km")
+```
+
+```{r}
+results = lm(sale ~ parking.lots, data=data)
+anova(results)
+```
+P-Value is 0.1721, and thus we do not reject the null hypothesis. 
+The feature Parking Lots statistically does not affect sales. 
+
+## 4. Number of Business Buildings
+```{r}
+ggplot(data, aes(x=data$business.building, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Business Buildings") + ylab("Electricity Sales") + xlab("Number of Business Buildings within 5km")
+```
+
+```{r}
+results = lm(sale ~ business.building, data=data)
+anova(results)
+```
+P-Value is 0.3843, and thus we do not reject the null hypothesis. 
+The feature Business Building statistically does not affect sales. 
+
+
+## 5. Hospital
+```{r}
+ggplot(data, aes(x=data$hospital, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Number of Hospitals") + ylab("Electricity Sales")+ xlab("Number of Hospitals within 5km")
+```
+
+```{r}
+results = lm(sale ~ hospital, data=data)
+anova(results)
+```
+P-Value is 0.4445, and thus we do not reject the null hypothesis. 
+The feature Hospital statistically does not affect sales. 
+
+
+## 6. Restroom
+```{r}
+ggplot(data, aes(x=data$restroom, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Number of Restrooms") + ylab("Electricity Sales")+ xlab("Number of Restrooms within 5km")
+```
+
+```{r}
+results = lm(sale ~ restroom, data=data)
+anova(results)
+```
+P-Value is 0.1697, and thus we do not reject the null hypothesis. 
+The feature Restroom statistically does not affect sales. 
+
+## 7. Shopping Mall
+```{r}
+ggplot(data, aes(x=data$shopping.mall, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Number of Shopping Malls") + ylab("Electricity Sales") + xlab("Number of Shopping Malls within 5km")
+```
+
+```{r}
+results = lm(sale ~ shopping.mall, data=data)
+summary(results)
+```
+Because the p-value is 0.04816, we reject our null hypothesis. 
+The feature shopping mall has statistically significant correlation with electric sales. It has positive correlation, meaning that sales will increase if number of shopping malls within 5km increases. 
+
+
+## 8. Demand
+```{r}
+ggplot(data, aes(x=data$Demand, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Demand for Electricity") + ylab("Electricity Sales") + xlab("Demand for Electricity")
+```
+
+```{r}
+results = lm(sale ~ Demand, data=data)
+summary(results)
+```
+Because the p-value is 0.01689, we reject our null hypothesis. 
+The feature Demand has  significant correlation with electric sales. It has positive correlation, meaning that sales will increase for increased demand. 
+
+
+## 9. Number of Competitors' Charger
+```{r}
+ggplot(data, aes(x=data$number.of.competitors..charger, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Number of Competitor's Chargers") + ylab("Electricity Sales")+ xlab("Number of Competitor's Chargers")
+```
+
+```{r}
+results = lm(sale ~ number.of.competitors..charger, data=data)
+anova(results)
+```
+P-Value is 0.07766, and thus we do not reject the null hypothesis. 
+The feature Number of Competitors' Charger does not affect sales. 
+
+
+## 10. Competitor's Price
+```{r}
+ggplot(data, aes(x=data$competitors..price, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Competitor's Electricity Price") + ylab("Electricity Sales")+ xlab("Competitor's Electricity Price")
+```
+
+```{r}
+results = lm(sale ~ competitors..price, data=data)
+anova(results)
+```
+P-Value is 0.1285, and thus we do not reject the null hypothesis. 
+The feature Competitor's Price statistically does not affect sales. 
+
+
+## 11. Price
+```{r}
+ggplot(data, aes(x=data$Price, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Price of Electricity") + ylab("Electricity Sales")+ xlab("Price of Electricity per Kilowatt")
+```
+
+```{r}
+results = lm(sale ~ Price, data=data)
+anova(results)
+```
+P-Value is 0.203, and thus we do not reject the null hypothesis. 
+The feature Price statistically does not affect sales. 
+
+
+
+
+
+
+
+
+### Extra analysis
+Now, we carry out extra analysis on some of the features we left out during our main analysis. 
+Those features include: 
+- Position, Environment, Sign, Sanitation, Other mobile Carries, Convention center, Number of Chargers open in day time, Number of night-only chargers, and Total number of Chargers. 
+
+Features that are mostly single values (all zeros/ones, little observations) are left out in the analysis. 
+Even if these features are statistically significant in its effect in electricity sales, it is not useful when choosing the location of the charging station. As stated above, this is because these factors can be 'modified' even after choosing the location. 
+It will offer the customer some extra information about what kind of things to do/consider after choosing the location (e.g. putting up signs)
+
+Similarly, we will construct F-Test for each variable
+- Null Hypothesis: The feature does not affect the sale of electricity 
+- Alternative Hypothesis: Feature affects the sale of electricity 
+-	Reject at 0.05 level: if p < 0.05 we should reject the null hypothesis 
+ 
+ a. Position of the station 
+```{r}
+results = lm(sale ~ Position, data=data)
+anova(results)
+```
+P-Value is 0.7234, and thus we do not reject the null hypothesis. 
+Position does not affect sales. 
+
+ b. Environment
+```{r}
+results = lm(sale ~ Enviroment, data=data)
+anova(results)
+```
+P-Value is 0.5501, and thus we do not reject the null hypothesis. 
+Environment does not affect sales. 
+
+ c. Sign 
+```{r}
+results = lm(sale ~ Sign, data=data)
+anova(results)
+```
+P-Value is 0.1082, and thus we do not reject the null hypothesis. 
+Sign does not affect sales. 
+
+ d. Sanitation 
+```{r}
+results = lm(sale ~ sanitation, data=data)
+anova(results)
+```
+P-Value is 0.4296, and thus we do not reject the null hypothesis. 
+Sanitation does not affect sales. 
+
+ e. Other mobile Operator 
+```{r}
+results = lm(sale ~ Other.mobile.operator, data=data)
+anova(results)
+```
+P-Value is 0.2115, and thus we do not reject the null hypothesis. 
+Other mobile Operator does not affect sales. 
+
+ f. Convention center
+```{r}
+results = lm(sale ~ convention.center, data=data)
+anova(results)
+```
+P-Value is 0.7234, and thus we do not reject the null hypothesis. 
+Position does not affect sales. 
+
+ g. Number of Charger open in day time
+```{r}
+results = lm(sale ~ Num.of.Charger.open.in.day.time, data=data)
+anova(results)
+```
+P-Value is 0.01868. We reject our null hypothesis that the feature does not affect sales. 
+Number of Charger open in day time has significant positive effect in electricity sales. 
+
+```{r}
+ggplot(data, aes(x=data$Num.of.Charger.open.in.day.time, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Daytime Chargers") + ylab("Electricity Sales") + xlab("Number of Chargers Open in Day Time")
+```
+
+ h. Number of night only charger
+```{r}
+results = lm(sale ~ Number.of.night.only.charger, data=data)
+anova(results)
+```
+P-Value is 0.2276, and thus we do not reject the null hypothesis. 
+Number of night only charger does not affect sales. 
+
+ i. Total number of chargers 
+```{r}
+results = lm(sale ~ total.number.of.charger, data=data)
+anova(results)
+```
+P-Value is 0.03284. We reject our null hypothesis that the feature does not affect sales. 
+Total number of chargers has significant positive effect in electricity sales. 
+```{r}
+ggplot(data, aes(x=data$total.number.of.charger, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Total Chargers") + ylab("Electricity Sales") + xlab("Number of Total Chargers")
+```
+
