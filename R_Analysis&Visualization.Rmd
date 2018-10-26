@@ -3,10 +3,10 @@ title: 'Project: Electronic car charger sale analysis'
 author: "Hyunju Shim, 3035345693"
 date: "10/21/2018"
 output:
+  word_document: default
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
-  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -322,5 +322,10 @@ P-Value is 0.03284. We reject our null hypothesis that the feature does not affe
 Total number of chargers has significant positive effect in electricity sales. 
 ```{r}
 ggplot(data, aes(x=data$total.number.of.charger, y=data$sale)) + geom_point() + ggtitle("Add geom_point with coloring") + geom_smooth(method='lm') + ggtitle("Scatter Plot of Total Chargers") + ylab("Electricity Sales") + xlab("Number of Total Chargers")
+```
+
+```{r}
+results = lm(sale ~ shopping.mall + Demand, data=data)
+anova(results)
 ```
 
